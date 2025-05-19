@@ -1,0 +1,100 @@
+int A = 0; 
+int B = 0; 
+char  data[26];
+int   number_of_bytes_received;
+
+const int seg[7] = {4, 5, 6, 7, 8, 9, 10};
+
+const int numeros[4][7] = {
+  // a, b, c, d, e, f, g
+  {0, 0, 0, 1, 0, 0, 0}, // 0
+  {0, 1, 1, 1, 0, 1, 1}, // 1
+  {0, 0, 1, 0, 1, 0, 0}, // 2
+  {0, 1, 1, 0, 0, 1, 1}  // -1
+};
+
+void setup() {
+  pinMode(2, INPUT);   
+  pinMode(3, INPUT);    
+
+  for (int i = 0; i < 7; i++) {
+    pinMode(seg[i], OUTPUT);
+  }
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  A = digitalRead(2);
+  B = digitalRead(3);
+
+  while (Serial.available()) {
+    number_of_bytes_received = Serial.readBytesUntil(13, data, 25); 
+    data[number_of_bytes_received] = 0;
+
+    if (strcmp(data, "AND") == 0) {
+      if (A && B) { digitalWrite(12, HIGH); mostrarNumero(2); }
+      else { mostrarNumero(0); }
+    } 
+    else if (strcmp(data, "OR") == 0) {
+      if (A || B) { digitalWrite(12, HIGH); mostrarNumero(A + B); }
+      else { mostrarNumero(0); }
+    } 
+    else if (strcmp(data, "XOR") == 0) {
+      if (A ^ B) { digitalWrite(12, HIGH); mostrarNumero(1); }
+      else { mostrarNumero(0); }
+    } 
+    else if (strcmp(data, "NAND") == 0) {
+      if (!(A && B)) { digitalWrite(12, HIGH); mostrarNumero(1); }
+      else { mostrarNumero(0); }
+    } 
+    else if (strcmp(data, "NOR") == 0) {
+      if (!(A || B)) { digitalWrite(12, HIGH); mostrarNumero(0); }
+      else { mostrarNumero(1); }
+    } 
+    else if (strcmp(data, "XNOR") == 0) {
+      if (!(A ^ B)) { digitalWrite(12, HIGH); mostrarNumero(1); }
+      else { mostrarNumero(0); }
+    } 
+    else if (strcmp(data, "NOTA") == 0) {
+      if (!A) { digitalWrite(12, HIGH); mostrarNumero(1); }
+      else { mostrarNumero(0); }
+    } 
+    else if (strcmp(data, "SUMA") == 0) {
+      int r = A + B;
+      mostrarNumero((r <= 2) ? r : 3); 
+    } 
+    else if (strcmp(data, "RESTA") == 0) {
+      int r = A - B;
+      if (r < 0) r = 3; // error = -1
+      mostrarNumero(r);
+    } 
+    else if (strcmp(data, "MULT") == 0) {
+      int r = A * B;
+      mostrarNumero(r);
+    } 
+    else if (strcmp(data, "DIV") == 0) {
+      if (B == 0) { mostrarNumero(3); } // error por división entre cero
+      else {
+        int r = A / B;
+        mostrarNumero(r);
+      }
+    } 
+    else {
+      mostrarNumero(3); // error
+    }
+    delay(1000);
+    limpiarDisplay();
+  }
+}
+void mostrarNumero(int n) {
+  if (n < 0 || n > 3) n = 3; // protección
+  for (int i = 0; i < 7; i++) {
+    digitalWrite(seg[i], numeros[n][i]);
+  }
+}
+void limpiarDisplay() {
+  for (int i = 0; i < 7; i++) {
+    digitalWrite(seg[i], LOW);
+  }
+}
